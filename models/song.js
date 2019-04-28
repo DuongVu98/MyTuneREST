@@ -1,5 +1,5 @@
-import mongoose from "mongoose"
-import mongoosePaginate from "mongoose-paginate-v2"
+var mongoose = require("mongoose");
+var mongoosePaginate = require("mongoose-paginate-v2");
 
 const Schema = mongoose.Schema;
 
@@ -14,4 +14,4 @@ const SongSchema = new Schema({
 
 SongSchema.plugin(mongoosePaginate);
 
-export default mongoose.model("songs", SongSchema);
+module.exports = mongoose.model("songs", SongSchema);
