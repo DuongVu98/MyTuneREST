@@ -5,15 +5,16 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const GridFsStorage = require("multer-gridfs-storage");
 const Grid = require("gridfs-stream");
+const ObjectId = mongoose.Types.ObjectId;
 
 const SongSchema = require("../models/song");
 const conn = require("../database/connection");
 const router = express.Router();
-
 module.exports = router;
 
 const handlePageError = (res, e) => res.setStatus(500).send(e.message);
 const mongoURI = "mongodb+srv://Tony:1234@myfirstdb-1slkm.gcp.mongodb.net/test?retryWrites=true";
+const Song = SongSchema;
 
 let gfs;
 conn.once("open", () => {
@@ -71,7 +72,7 @@ router.get("/", (req, res) => {
 
 //@route POST /upload
 router.post("/upload", upload.single("file"), (req, res) => {
-    res.redirect("/");
+    // res.redirect("/api/songs");
     // let fileUpload = {};
     let fileUpload = req.file.filename;
     gfs.files.findOne({filename: fileUpload},(err, file) => {
@@ -81,22 +82,26 @@ router.post("/upload", upload.single("file"), (req, res) => {
             });
         }
         fileId = file._id;
-        let songData = {
+        console.log(fileId);
+        let data = {
             id: 1,
             url: "something",
             title: "song title",
             artist: "song artist",
             img: "some image",
             isLoved: false,
-            uploadFile: ObjectId(fileId)
+            uploadFile: fileId
         };
-        const Song = SongSchema;
-        Song.create(songData, (err, data) => {
+        console.log(data);
+        let newSong = new Song(data);
+        console.log(newSong);
+        newSong.save((err) => {
             if(err){
                 return res.status(500).json({
-                    err: "no files exist"
+                    err: "no exist file"
                 });
             }
+            console.log("save song successful");
             return res.status(200).json(data);
         });
     });
