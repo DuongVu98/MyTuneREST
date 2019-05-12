@@ -1,13 +1,19 @@
-var express = require("express");
-var assign = require("lodash/assign");
-var mongoose = require("mongoose");
-var conn = require("../database/connection");
-var SongSchema = require("../models/song");
+const express = require("express");
+const assign = require("lodash/assign");
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const multer = require("multer");
+const GridFsStorage = require("multer-gridfs-storage");
+const Grid = require("gridfs-stream");
 
-var router = express.Router();
+const SongSchema = require("../models/song");
+const conn = require("../database/connection");
+const router = express.Router();
+
 module.exports = router;
 
 const handlePageError = (res, e) => res.setStatus(500).send(e.message);
+const mongoURI = "mongodb+srv://Tony:1234@myfirstdb-1slkm.gcp.mongodb.net/test?retryWrites=true";
 
 let gfs;
 conn.once("open", () => {
@@ -75,9 +81,25 @@ router.post("/upload", upload.single("file"), (req, res) => {
             });
         }
         fileId = file._id;
-        
+        let songData = {
+            id: 1,
+            url: "something",
+            title: "song title",
+            artist: "song artist",
+            img: "some image",
+            isLoved: false,
+            uploadFile: ObjectId(fileId)
+        };
+        const Song = SongSchema;
+        Song.create(songData, (err, data) => {
+            if(err){
+                return res.status(500).json({
+                    err: "no files exist"
+                });
+            }
+            return res.status(200).json(data);
+        });
     });
-    console.log(fileUpload);
 });
 
 //@route GET /file
