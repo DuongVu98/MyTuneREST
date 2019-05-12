@@ -17,7 +17,7 @@ app.set("views", "./views");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.use("/songs", songs);
+app.use("/api/songs", songs);
 
 app.get("/", (req, res) => {
     return res.send("Welcome to MyTune")
