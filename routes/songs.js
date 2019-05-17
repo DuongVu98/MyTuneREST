@@ -80,7 +80,8 @@ router.get("/:id", (req, res) => {
                     err: "no files exist"
                 });
             }
-            return res.json(file);
+            song.getFile = file;
+            return res.json(song);
         });
     }); 
 });
@@ -102,7 +103,8 @@ router.post("/upload", upload.single("file"), (req, res) => {
             artist: "song artist",
             img: "some image",
             isLoved: false,
-            fileUpload: fileId
+            fileUpload: fileId,
+            getFile: null
         };
         let newSong = new Song(data);
         console.log(newSong);
