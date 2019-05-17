@@ -8,7 +8,7 @@ const Grid = require("gridfs-stream");
 const ObjectId = mongoose.Types.ObjectId;
 
 const SongSchema = require("../models/song");
-const conn = require("../database/connection");
+const connection = require("../database/connection");
 const router = express.Router();
 module.exports = router;
 
@@ -17,9 +17,9 @@ const mongoURI = "mongodb+srv://Tony:1234@myfirstdb-1slkm.gcp.mongodb.net/test?r
 const Song = SongSchema;
 
 let gfs;
-conn.once("open", () => {
+connection.once("open", () => {
     //init stream
-    gfs = Grid(conn.db, mongoose.mongo);
+    gfs = Grid(connection.db, mongoose.mongo);
     gfs.collection("uploads");
 });
 
@@ -69,13 +69,17 @@ router.get("/", (req, res) => {
         }
     });
 });
+router.get("/:id", (req, res) => {
+    Song.findOne({id: req.params.id}).populate("fileUpload").exec((err, song) => {
+        if(err) console.log("error id");
+        else console.log(song.fileUpload.filename);
+    });
+});
 
 //@route POST /upload
 router.post("/upload", upload.single("file"), (req, res) => {
-    // res.redirect("/api/songs");
-    // let fileUpload = {};
     let fileUpload = req.file.filename;
-    gfs.files.findOne({filename: fileUpload},(err, file) => {
+    gfs.files.findOne({ filename: fileUpload }, (err, file) => {
         if (!file || file.length === 0) {
             return res.status(404).json({
                 err: "no files exist"
@@ -90,20 +94,15 @@ router.post("/upload", upload.single("file"), (req, res) => {
             artist: "song artist",
             img: "some image",
             isLoved: false,
-            uploadFile: fileId
+            fileUpload: fileId
         };
-        console.log(data);
         let newSong = new Song(data);
         console.log(newSong);
-        newSong.save((err) => {
-            if(err){
-                return res.status(500).json({
-                    err: "no exist file"
-                });
-            }
-            console.log("save song successful");
-            return res.status(200).json(data);
+        newSong.save((err, newSong) => {
+            if(err) console.log("song error: " + err);
+            else console.log("saved - " + newSong);
         });
+        res.redirect("/api/songs");
     });
 });
 
@@ -203,7 +202,7 @@ router.delete("/files/:id", (req, res) => {
         if (err) {
             return res.status(404).json({ err: err });
         }
-        res.redirect("/");
+        res.redirect("/api/songs");
     });
 });
 
