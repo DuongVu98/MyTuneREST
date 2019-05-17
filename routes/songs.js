@@ -70,12 +70,20 @@ router.get("/", (req, res) => {
     });
 });
 router.get("/:id", (req, res) => {
-    Song.findOne({id: req.params.id}).populate("fileUpload").exec((err, song) => {
-        if(err) console.log("error id");
-        else console.log(song.fileUpload.filename);
-    });
+    Song.findOne({id: req.params.id}, (err, song) => {
+        if(err) return handlePageError(res, err);
+        
+        gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
+            //check if files
+            if (!file || file.length === 0) {
+                return res.status(404).json({
+                    err: "no files exist"
+                });
+            }
+            return res.json(file);
+        });
+    }); 
 });
-
 //@route POST /upload
 router.post("/upload", upload.single("file"), (req, res) => {
     let fileUpload = req.file.filename;
