@@ -45,34 +45,65 @@ const storage = new GridFsStorage({
 });
 const upload = multer({ storage });
 
+const getFileFromSong = (songToGetFile) => {
+    gfs.files.findOne({ _id: songToGetFile.fileUpload }, (err, file) => {
+        //check if files
+        if (!file || file.length === 0) {
+            console.log(file)
+            return { err: "no song" };
+        }else{
+            songToGetFile.getFile = file
+            console.log(songToGetFile)
+            return songToGetFile;
+        }
+    });
+}
+
 //@route GET /
 //load form
 router.get("/", (req, res) => {
-    // res.render("index");
-    gfs.files.find().toArray((err, files) => {
-        if (!files || files.length === 0) {
-            res.render("index", { files: false });
-        } else {
-            files.map(file => {
-                if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
-                    file.isImage = true;
-                    // file.isAudio = false;
-                } else if (file.contentType === "audio/mp3") {
-                    // file.isAudio = true;
-                    file.isImage = false;
-                } else {
-                    file.isImage = false;
-                    // file.isAudio = false;
-                }
-            });
-            res.render("index", { files: files });
+    let songsList = [];
+    Song.find({}, (err, songs) => {
+        if (!songs || songs.length === 0) {
+            return res.json({
+                err: "no songs exist"
+            })
         }
+        songs.forEach(song => {
+            let songWithFile = getFileFromSong(song)
+            songsList.push(songWithFile)
+        })
+        console.log(songsList)
+        return res.json(songsList);
     });
+
+    // gfs.files.find().toArray((err, files) => {
+    //     if (!files || files.length === 0) {
+    //         res.render("index", { files: false });
+    //     } else {
+    //         files.map(file => {
+    //             if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
+    //                 file.isImage = true;
+    //                 // file.isAudio = false;
+    //             } else if (file.contentType === "audio/mp3") {
+    //                 // file.isAudio = true;
+    //                 file.isImage = false;
+    //             } else {
+    //                 file.isImage = false;
+    //                 // file.isAudio = false;
+    //             }
+    //         });
+    //         res.render("index", { files: files });
+    //     }
+    // });
 });
 router.get("/:id", (req, res) => {
-    Song.findOne({id: req.params.id}, (err, song) => {
-        if(err) return handlePageError(res, err);
+    Song.findOne({ id: req.params.id }, (err, song) => {
+        if (err) return handlePageError(res, err);
         
+        //test getfilefromsong
+        console.log(getFileFromSong(song))
+
         gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
             //check if files
             if (!file || file.length === 0) {
@@ -83,7 +114,9 @@ router.get("/:id", (req, res) => {
             song.getFile = file;
             return res.json(song);
         });
-    }); 
+
+        
+    });
 });
 //@route POST /upload
 router.post("/upload", upload.single("file"), (req, res) => {
@@ -109,7 +142,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
         let newSong = new Song(data);
         console.log(newSong);
         newSong.save((err, newSong) => {
-            if(err) console.log("song error: " + err);
+            if (err) console.log("song error: " + err);
             else console.log("saved - " + newSong);
         });
         res.redirect("/api/songs");
@@ -215,40 +248,3 @@ router.delete("/files/:id", (req, res) => {
         res.redirect("/api/songs");
     });
 });
-
-// //HTTP GET method
-// router.get("/", (req, res) => {
-//     // res.send("list of songs");
-//     const Song = SongSchema;
-//     Song.find().then((song) => {
-//         res.send({song});
-//     }, (e) => {
-//         res.status(400).send(e);
-//     });
-// });
-// //HTTP POST method
-// router.post("/", async(req, res) => {
-//     try{
-//         const song = await new SongSchema(req.body).save();
-
-//         return res.send({
-//             message: "create new song successfully",
-//             data: song
-//         });
-//     }catch(e){
-//         return handlePageError(res, e);
-//     }
-// });
-
-// //HTTP PUT method
-// router.put("/:id", async(req, res) => {
-//     try{
-//         await Song.findByIdAndUpdate(req.params.id. req.body);
-
-//         return res.json({
-//             message: "Updated post successfully"
-//         });
-//     }catch(e){
-//         return handlePageError(res, e);
-//     }
-// });
