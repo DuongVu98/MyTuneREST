@@ -68,8 +68,8 @@ router.get("/index",(req, res) => {
     });
 })
 
+// get all songs
 //@route GET /
-//load form
 router.get("/", (req, res) => {
     let songsList = [];
     Song.find({}, (err, songs) => {
@@ -93,8 +93,11 @@ router.get("/", (req, res) => {
         });
     });
 });
+
+//get song by id
+//@route GET /id
 router.get("/:id", (req, res) => {
-    Song.findOne({ id: req.params.id }, (err, song) => {
+    Song.findOne({ _id: req.params.id }, (err, song) => {
         if (err) return handlePageError(res, err);
         if (song === null) return res.json({err: "no song"})
         gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
@@ -111,8 +114,11 @@ router.get("/:id", (req, res) => {
         
     });
 });
+
+//get file playing from song
+//@route GET /id/audio
 router.get("/:id/audio", (req, res) => {
-    Song.findOne({id: req.params.id}, (err, song) => {
+    Song.findOne({_id: req.params.id}, (err, song) => {
         gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
 
             if(err) console.log(err)
@@ -136,6 +142,7 @@ router.get("/:id/audio", (req, res) => {
     })
 })
 
+// upload song
 //@route POST /upload
 router.post("/upload", upload.single("file"), (req, res) => {
     let fileUpload = req.file.filename;
@@ -167,6 +174,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
     });
 });
 
+//delete song and file
 //@route DELETE /id
 router.delete("/id/:id", (req, res) => {
     Song.findOne({id: req.song.id}, (err, song) => {
@@ -185,6 +193,9 @@ router.delete("/id/:id", (req, res) => {
     })
     
 });
+
+
+// these are for index.ejs checking
 
 //@route GET /image/:filename
 //display image
@@ -208,9 +219,6 @@ router.get("/image/:filename", (req, res) => {
     });
 });
 
-
-
-// these are for index checking
 //@route GET /audio/:filename
 router.get("/audio/:filename", (req, res) => {
     gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
