@@ -70,11 +70,18 @@ router.get("/", (req, res) => {
             })
         }
         songs.forEach(song => {
-            let songWithFile = getFileFromSong(song)
-            songsList.push(songWithFile)
-        })
-        console.log(songsList)
-        return res.json(songsList);
+
+            //getfilefromsong
+            gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
+                //check if files
+                if (!file || file.length === 0) {
+                    return { err: "no song" };
+                }
+                song.getFile = file;
+                songsList.push(song);
+                return res.json(songsList);
+            });
+        });
     });
 
     // gfs.files.find().toArray((err, files) => {
