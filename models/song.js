@@ -10,7 +10,11 @@ const SongSchema = new Schema({
     artist: String,
     img: String,
     isLoved: Boolean,
-    fileUpload: Schema.Types.ObjectId
+    fileUpload: {
+        type: Schema.Types.ObjectId,
+        ref: "uploads.files"
+    },
+    getFile: Object
 });
 
 SongSchema.plugin(mongoosePaginate);
