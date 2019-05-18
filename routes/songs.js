@@ -45,19 +45,28 @@ const storage = new GridFsStorage({
 });
 const upload = multer({ storage });
 
-const getFileFromSong = (songToGetFile) => {
-    gfs.files.findOne({ _id: songToGetFile.fileUpload }, (err, file) => {
-        //check if files
-        if (!file || file.length === 0) {
-            console.log(file)
-            return { err: "no song" };
-        }else{
-            songToGetFile.getFile = file
-            console.log(songToGetFile)
-            return songToGetFile;
+//@route for index.ejs
+router.get("/index",(req, res) => {
+    gfs.files.find().toArray((err, files) => {
+        if (!files || files.length === 0) {
+            res.render("index", { files: false });
+        } else {
+            files.map(file => {
+                if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
+                    file.isImage = true;
+                    // file.isAudio = false;
+                } else if (file.contentType === "audio/mp3") {
+                    // file.isAudio = true;
+                    file.isImage = false;
+                } else {
+                    file.isImage = false;
+                    // file.isAudio = false;
+                }
+            });
+            res.render("index", { files: files });
         }
     });
-}
+})
 
 //@route GET /
 //load form
@@ -87,10 +96,7 @@ router.get("/", (req, res) => {
 router.get("/:id", (req, res) => {
     Song.findOne({ id: req.params.id }, (err, song) => {
         if (err) return handlePageError(res, err);
-        
-        //test getfilefromsong
-        console.log(getFileFromSong(song))
-
+        if (song === null) return res.json({err: "no song"})
         gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
             //check if files
             if (!file || file.length === 0) {
@@ -161,49 +167,23 @@ router.post("/upload", upload.single("file"), (req, res) => {
     });
 });
 
-//@route GET /file
-router.get("/files/", (req, res) => {
-    gfs.files.find().toArray((err, files) => {
-        //check if files
-        if (!files || files.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
+//@route DELETE /id
+router.delete("/id/:id", (req, res) => {
+    Song.findOne({id: req.song.id}, (err, song) => {
+        if(err) return handlePageError(res, err)
+        else if (song === null) return res.status(404).json({err: "no song"})
 
-        return res.json(files);
-    });
-});
-
-//@route GET /file/:filename
-router.get("/files/:filename", (req, res) => {
-    gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
-        //check if files
-        if (!file || file.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
-        // res.set('Content-Type', file.contentType);
-        // res.set('Content-Disposition', "inline; filename=" + file.filename);
-        // let read_stream = gfs.createReadStream({ filename: file.filename });
-        // read_stream.pipe(res);
-        return res.json(file);
-    });
-});
-
-//@route GET /file/:id
-router.get("/id/:id", (req, res) => {
-    gfs.files.findOne({ _id: req.params.id }, (err, file) => {
-        //check if files
-        if (!file || file.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
-
-        return res.json(file);
-    });
+        gfs.remove({ _id: song.fileUpload, root: "uploads" }, (err, GridFsStorage) => {
+            if (err) {
+                return res.status(404).json({ err: err });
+            }
+        });
+        Song.deleteOne(song, (err) => {
+            return handlePageError(res, err)
+        })
+        return res.json({message: "delete successfully"})
+    })
+    
 });
 
 //@route GET /image/:filename
@@ -229,6 +209,8 @@ router.get("/image/:filename", (req, res) => {
 });
 
 
+
+// these are for index checking
 //@route GET /audio/:filename
 router.get("/audio/:filename", (req, res) => {
     gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
@@ -260,25 +242,3 @@ router.delete("/files/:id", (req, res) => {
         res.redirect("/api/songs");
     });
 });
-
-router.get("/index",(req, res) => {
-    gfs.files.find().toArray((err, files) => {
-        if (!files || files.length === 0) {
-            res.render("index", { files: false });
-        } else {
-            files.map(file => {
-                if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
-                    file.isImage = true;
-                    // file.isAudio = false;
-                } else if (file.contentType === "audio/mp3") {
-                    // file.isAudio = true;
-                    file.isImage = false;
-                } else {
-                    file.isImage = false;
-                    // file.isAudio = false;
-                }
-            });
-            res.render("index", { files: files });
-        }
-    });
-})
