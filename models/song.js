@@ -12,7 +12,7 @@ const SongSchema = new Schema({
     isLoved: Boolean,
     fileUpload: {
         type: Schema.Types.ObjectId,
-        ref: "uploads.files"
+        ref: "songs.files"
     },
     getFile: Object
 });

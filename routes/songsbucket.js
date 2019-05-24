@@ -40,14 +40,13 @@ songRouter.get("/", (req, res) => {
 
 //@route GET /:id
 songRouter.get("/:id", (req, res) => {
-    SongFile.findOne({ _id: req.params.id }, (err, songFile) => {
-        if (err) return handlePageError(err);
-        else if (songFile === null) return res.json({ message: "no song file" });
-    })
+
+    Song.findOne({_id: req.params.id}).populate("fileUpload").exec((err, song) => {
+        console.log(song);
 
     let fileId
     try {
-        fileId = new ObjectId(req.params.id);
+        fileId = new ObjectId(song.fileUpload._id);
     } catch (err) {
         return res.json({ err: err })
     }
@@ -71,6 +70,9 @@ songRouter.get("/:id", (req, res) => {
     } else {
         return res.json({ message: "Something happen with file id" });
     }
+    })
+
+    
 })
 
 songRouter.post("/upload", upload.single("file"), (req, res) => {
@@ -94,8 +96,9 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
         res.end()
     })
 
-    
+
     // Save new song to collection
+    // should be req.body
     let newSong = new Song({
         id: 1,
         url: "something",
