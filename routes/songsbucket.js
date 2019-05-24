@@ -35,7 +35,7 @@ const upload = multer({
 
 //@route GET /
 router.get("/" ,(req, res) => {
-    return .res.json({message: "connect gridfsBucket successfully"})
+    return res.json({message: "connect gridfsBucket successfully"})
 })
 
 
