@@ -35,44 +35,57 @@ const upload = multer({
 
 //@route GET /
 songRouter.get("/", (req, res) => {
-    return res.json({ message: "connect gridfsBucket successfully" })
+    Song.find({}).populate("fileUpload").exec((err, songs) => {
+        if (err) return handlePageError(res, err)
+        return res.status(200).json(songs);
+    })
 })
 
-//@route GET /:id
 songRouter.get("/:id", (req, res) => {
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        if (err) {
+            console.log("error populate");
+        }else{
+            return res.status(200).json(song);
+        }
+    })
+})
+//@route GET /:id/audio
+songRouter.get("/audio/:id", (req, res) => {
 
-    Song.findOne({_id: req.params.id}).populate("fileUpload").exec((err, song) => {
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
         console.log(song);
 
-    let fileId
-    try {
-        fileId = new ObjectId(song.fileUpload._id);
-    } catch (err) {
-        return res.json({ err: err })
-    }
-    console.log(fileId)
-    res.setHeader("Content-Type", "audio/mp3");
-    res.setHeader("Accept-Ranges", "bytes");
+        let fileId
+        try {
+            fileId = new ObjectId(song.fileUpload._id);
+        } catch (err) {
+            return res.json({ err: err })
+        }
+        console.log(fileId)
+        res.setHeader("Content-Type", "audio/mp3");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Length", song.fileUpload.length);
 
-    if (fileId != null) {
-        let downloadStream = bucket.openDownloadStream(fileId)
-        downloadStream.on("data", (chunk) => {
-            res.write(chunk);
-        })
+        if (fileId != null) {
+            let downloadStream = bucket.openDownloadStream(fileId)
+            downloadStream.on("data", (chunk) => {
+                res.write(chunk);
+            })
 
-        downloadStream.on("error", () => {
-            res.sendStatus(404);
-        });
-        downloadStream.on("end", () => {
-            console.log("Download successfully with file: " + fileId)
-            res.end();
-        });
-    } else {
-        return res.json({ message: "Something happen with file id" });
-    }
+            downloadStream.on("error", () => {
+                res.sendStatus(404);
+            });
+            downloadStream.on("end", () => {
+                console.log("Download successfully with file: " + fileId)
+                res.end();
+            });
+        } else {
+            return res.json({ message: "Something happen with file id" });
+        }
     })
 
-    
+
 })
 
 songRouter.post("/upload", upload.single("file"), (req, res) => {
@@ -110,7 +123,7 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
         getFile: null
     });
     newSong.save((err, song) => {
-        if(err) console.log("song error: " + err)
+        if (err) console.log("song error: " + err)
         else console.log("successfully saved song: " + song);
     });
 })
