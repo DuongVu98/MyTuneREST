@@ -5,6 +5,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const songs = require("./routes/songs.js");
+const songsbucket = require("./routes/songsbucket");
 
 app.listen(port, () => {
     console.log("Application listen on port: " + port);
@@ -19,9 +20,14 @@ app.set("views", "./views");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.use("/api/songs", songs);
+// app.use("/api/songs", songs);
+app.use("/api/songs", songsbucket);
 
 app.get("/", (req, res) => {
     return res.send("Welcome to MyTune")
     // return res.render("index");
 });
+
+app.get("/test-upload", (req, res) => {
+    res.render("index", { files: false });
+})
