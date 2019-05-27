@@ -45,7 +45,7 @@ songRouter.get("/:id", (req, res) => {
     Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
         if (err) {
             console.log("error populate");
-        }else{
+        } else {
             return res.status(200).json(song);
         }
     })
@@ -84,10 +84,41 @@ songRouter.get("/audio/:id", (req, res) => {
             return res.json({ message: "Something happen with file id" });
         }
     })
-
-
 })
 
+songRouter.get("/file-audio/:id", (req, res) => {
+    let fileId
+    try {
+        fileId = new ObjectId(req.params.id);
+    } catch (err) {
+        return res.json({ err: err })
+    }
+    console.log(fileId)
+    SongFile.findOne({ _id: fileId }, (err, songFile) => {
+
+        if(err) return handlePageError(res, err)
+
+        res.setHeader("Content-Type", "audio/mp3");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Length", songFile.length);
+
+        if (fileId != null) {
+            let downloadStream = bucket.openDownloadStream(fileId)
+            downloadStream.on("data", (chunk) => {
+                res.write(chunk);
+            })
+
+            downloadStream.on("error", () => {
+                res.sendStatus(404);
+            });
+            downloadStream.on("end", () => {
+                console.log("Download successfully with file: " + fileId)
+                res.end();
+            });
+        }
+    })
+
+})
 songRouter.post("/upload", upload.single("file"), (req, res) => {
 
     // Upload File 
@@ -114,10 +145,10 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     // should be req.body
     let newSong = new Song({
         id: 1,
-        url: "something",
+        url: "/api/songs/file-audio/" + fileId,
         title: "song title",
         artist: "song artist",
-        img: "some image",
+        image: null,
         isLoved: false,
         fileUpload: fileId,
         getFile: null
