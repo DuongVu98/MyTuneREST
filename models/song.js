@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
-const mongoosePaginate = require("mongoose-paginate-v2");
+const mongoose = require("mongoose")
+const mongoosePaginate = require("mongoose-paginate-v2")
 
-const Schema = mongoose.Schema;
+const Schema = mongoose.Schema
 
 const SongSchema = new Schema({
     id: String,
@@ -19,6 +19,6 @@ const SongSchema = new Schema({
     }
 });
 
-SongSchema.plugin(mongoosePaginate);
+SongSchema.plugin(mongoosePaginate)
 
-module.exports = mongoose.model("songs", SongSchema);
+module.exports = mongoose.model("songs", SongSchema)

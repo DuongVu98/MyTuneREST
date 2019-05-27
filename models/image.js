@@ -3,6 +3,7 @@ const mongoosePaginate = require("mongoose-paginate-v2")
 
 const ImageSchema = new mongoose.Schema({
     imageName: String,
+    url: String,
     classification: String,
     imageFileUpload: {
         type: mongoose.Schema.Types.ObjectId,

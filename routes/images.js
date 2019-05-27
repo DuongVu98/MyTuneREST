@@ -31,19 +31,23 @@ const upload = multer({
     }
 })
 
-imageRouter.get("/:id", (req, res) => {
-
+imageRouter.get("/", (req, res) => {
+    Image.find({}).populate("imageFileUpload").exec((err, images) => {
+        if (err) return handlePageError(res, err)
+        return res.status(200).json(images);
+    })
 })
 
 //@route GET /image/:id
-imageRouter.get("/image/:id", (req, res) => {
+imageRouter.get("/file-image/:id", (req, res) => {
     let fileId
     try {
         fileId = new mongoose.Types.ObjectId(req.params.id)
     } catch (err) {
         return res.json({ err: err })
     }
-    console.log("hello")
+
+    //set header for download
     res.setHeader("Content-Type", "image/jpeg")
     res.setHeader("Accept-Ranges", "bytes")
 
@@ -87,11 +91,12 @@ imageRouter.post("/upload", upload.single("file"), (req, res) => {
 
     let newImage = new Image({
         imageName: "some image name",
+        url: "mytune-service.herokuapp.com/api/images/file-image/" + fileId,
         classification: "avatar",
         imageFileUpload: fileId
     })
-    newImage.save((err, song) => {
+    newImage.save((err, image) => {
         if(err) console.log(err)
-        else console.log("successfully saved image")
+        else console.log("successfully saved image: " + image)
     })
 })
