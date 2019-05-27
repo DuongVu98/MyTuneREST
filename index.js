@@ -6,10 +6,10 @@ const port = process.env.PORT || 3000
 
 const songs = require("./routes/songs.js")
 const songsbucket = require("./routes/songsbucket")
-
+const images = require("./routes/images")
 app.listen(port, () => {
     console.log("Application listen on port: " + port)
-});
+})
 
 
 app.use(methodOverride("_method"))
@@ -22,6 +22,7 @@ app.use(bodyParser.urlencoded({extended: true}))
 
 // app.use("/api/songs", songs);
 app.use("/api/songs", songsbucket)
+app.use("/api/images", images)
 
 app.get("/", (req, res) => {
     return res.send("Welcome to MyTune")
