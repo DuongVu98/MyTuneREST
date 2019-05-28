@@ -885,7 +885,7 @@ iconv-lite@0.4.23:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-iconv-lite@0.4.24, iconv-lite@^0.4.4:
+iconv-lite@0.4.24, iconv-lite@^0.4.15, iconv-lite@^0.4.4:
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
   integrity sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==
@@ -1498,6 +1498,13 @@ negotiator@0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
   integrity sha1-KzJxhOiZIQEXeyhWP7XnECrNDKk=
+
+node-id3@^0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/node-id3/-/node-id3-0.1.7.tgz#af5bdfeb32edd32fd42426f5754f64053737e0e6"
+  integrity sha512-jO2ulRv9yUhW3W4VItwDKxY8pP0Z4vMqG+pMVZHwWqEv9WoVRqipoCzzOja2Jl6xvhUikRL5AafTs+tlgnNlCg==
+  dependencies:
+    iconv-lite "^0.4.15"
 
 node-pre-gyp@^0.12.0:
   version "0.12.0"

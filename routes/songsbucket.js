@@ -3,6 +3,7 @@ const mongoose = require("mongoose")
 const multer = require("multer")
 const Readable = require("stream").Readable
 const fs = require("fs")
+const NodeID3 = require('node-id3')
 
 const SongSchema = require("../models/song")
 const SongFileSchema = require("../models/songFile")
@@ -124,6 +125,9 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     // Upload File 
     let fileName = req.file.originalname
 
+    //read mp3 meta tag file
+    let tags = NodeID3.read(req.file.buffer)
+
     const readableStream = new Readable()
     readableStream.push(req.file.buffer)
     readableStream.push(null)
@@ -144,14 +148,14 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     // Save new song to collection
     // should be req.body
     let newSong = new Song({
-        id: 1,
         url: "mytune-service.herokuapp.com/api/songs/file-audio/" + fileId,
-        title: "song title",
-        artist: "song artist",
+        title: tags.title,
+        artist: tags.artist,
+        album: tags.album,
+        genre: tags.genre,
         image: null,
         isLoved: false,
         fileUpload: fileId,
-        getFile: null
     })
     newSong.save((err, song) => {
         if (err) console.log("song error: " + err)

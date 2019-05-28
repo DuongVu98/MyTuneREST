@@ -4,10 +4,11 @@ const mongoosePaginate = require("mongoose-paginate-v2")
 const Schema = mongoose.Schema
 
 const SongSchema = new Schema({
-    id: String,
     url: String,
     title: String,
     artist: String,
+    album: String,
+    genre: String,
     image: {
         type: Schema.Types.ObjectId,
         ref: "images.files"
