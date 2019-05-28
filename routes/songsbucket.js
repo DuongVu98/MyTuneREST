@@ -36,7 +36,7 @@ const upload = multer({
 //@route GET /
 songRouter.get("/", (req, res) => {
     Song.find({}).populate("fileUpload").exec((err, songs) => {
-        if (err) return handlePageError(res, err)
+        if (err) return res.json({err: err})
         return res.status(200).json(songs)
     })
 })
