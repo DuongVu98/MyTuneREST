@@ -71,7 +71,7 @@ imageRouter.get("/file-image/:id", (req, res) => {
 
 //@route POST /upload
 imageRouter.post("/upload", upload.single("file"), (req, res) => {
-    
+
     let fileName = req.file.originalname
     const readableStream = new Readable()
     readableStream.push(req.file.buffer)
@@ -96,7 +96,26 @@ imageRouter.post("/upload", upload.single("file"), (req, res) => {
         imageFileUpload: fileId
     })
     newImage.save((err, image) => {
-        if(err) console.log(err)
+        if (err) console.log(err)
         else console.log("successfully saved image: " + image)
+    })
+})
+
+imageRouter.delete("/delete/:id", (req, res) => {
+
+    Image.find({_id: req.params.id},(err, image) => {
+        if(err) return res.json({err: "find image error"})
+
+        console.log(image)
+        ImageFile.deleteOne({_id: image.imageFileUpload}, (err) => {
+            if(err) return res.json({err: err})
+        })
+        connection.db.collection("images.chunks").deleteMany({file_id: req.params.id}, (err, res) => {
+            if(err) return res.json({err: err})
+        })
+
+        Image.deleteOne({_id: req.params.id}, (err) => {
+            if(err) return res.json({err: err})
+        })
     })
 })

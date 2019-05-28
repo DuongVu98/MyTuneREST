@@ -167,8 +167,13 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
 
 
 songRouter.delete("/delete/:id", (req, res) => {
-    bucket.delete(req.params.id, (err) => {
-        if(err) return res.json({err: err})
-        return res.json({message: "delete successfully"})
+
+    let uploadStream = bucket.openUploadStream(req.params.id)
+    
+    uploadStream.once("open", () => {
+        bucket.delete(req.params.id, (err) => {
+            if(err) return res.json({err: err})
+            return res.json({message: "delete successfully"})
+        })
     })
 })
