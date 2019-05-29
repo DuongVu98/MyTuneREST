@@ -36,6 +36,7 @@ const upload = multer({
 
 //@route GET /
 songRouter.get("/", (req, res) => {
+    // Song.find({}).select("_id -fileUpload").populate("fileUpload").exec((err, songs) => {
     Song.find({}).populate("fileUpload").exec((err, songs) => {
         if (err) return res.json({ err: err })
         return res.status(200).json(songs)
@@ -165,15 +166,21 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     })
 })
 
-
+//@route DELETE /delete/:id
 songRouter.delete("/delete/:id", (req, res) => {
 
-    let uploadStream = bucket.openUploadStream(req.params.id)
-    
-    uploadStream.once("open", () => {
-        bucket.delete(req.params.id, (err) => {
-            if(err) return res.json({err: err})
-            return res.json({message: "delete successfully"})
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        if (err) return res.json({ err: "find image error" })
+
+        console.log("id to delete: " + song.fileUpload)
+
+        bucket.delete(song.fileUpload._id, (err) => {
+            if (err) return res.json({ err: "bucket delete error " + err })
+
+            Song.deleteOne({ _id: req.params.id }, (err) => {
+                if (err) return json({ message: "model delete error" })
+                return res.json({ message: "delete successfully" })
+            })
         })
     })
 })

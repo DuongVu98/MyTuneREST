@@ -103,19 +103,18 @@ imageRouter.post("/upload", upload.single("file"), (req, res) => {
 
 imageRouter.delete("/delete/:id", (req, res) => {
 
-    Image.find({_id: req.params.id},(err, image) => {
-        if(err) return res.json({err: "find image error"})
+    Image.findOne({ _id: req.params.id }).populate("imageFileUpload").exec((err, image) => {
+        if (err) return res.json({ err: "find image error" })
 
-        console.log(image)
-        ImageFile.deleteOne({_id: image.imageFileUpload}, (err) => {
-            if(err) return res.json({err: err})
-        })
-        connection.db.collection("images.chunks").deleteMany({file_id: req.params.id}, (err, res) => {
-            if(err) return res.json({err: err})
-        })
+        console.log("id to delete: " + image.imageFileUpload)
 
-        Image.deleteOne({_id: req.params.id}, (err) => {
-            if(err) return res.json({err: err})
-        })
+        bucket.delete(image.imageFileUpload._id, (err) => {
+            if(err) return res.json({err: "bucket delete error "+err})
+
+            Image.deleteOne({_id: req.params.id}, (err) => {
+                if(err) return json({message: "model delete error"})
+                return res.json({ message: "delete successfully" })
+            }) 
+        }) 
     })
 })
