@@ -152,10 +152,10 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     // should be req.body
     let newSong = new Song({
         url: "mytune-service.herokuapp.com/api/songs/file-audio/" + fileId,
-        title: tags.title,
-        artist: tags.artist,
-        album: tags.album,
-        genre: tags.genre,
+        title: (req.body.title == null)? tags.title : req.body.title,
+        artist: (req.body.artist == null)? tags.artist : req.body.artist,
+        album: (req.body.album == null)? tags.album : req.body.album,
+        genre: (req.body.genre == null)? tags.genre : req.body.genre,
         image: null,
         isLoved: false,
         fileUpload: fileId,

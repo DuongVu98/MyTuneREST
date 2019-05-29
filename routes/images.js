@@ -69,6 +69,21 @@ imageRouter.get("/file-image/:id", (req, res) => {
     }
 })
 
+//@route GET /file-image/default-image
+imageRouter.get("/default-image", (req, res) => {
+    let defaultImageStream = fs.createReadStream("./res/defaultImg.png")
+    defaultImageStream.on("data", (data) => {
+        console.log(data)
+        res.write(data)
+    })
+    defaultImageStream.on("error", () => {
+        res.sendStatus(404)
+    });
+    defaultImageStream.on("end", () => {
+        res.end()
+    })
+})
+
 //@route POST /upload
 imageRouter.post("/upload", upload.single("file"), (req, res) => {
 
