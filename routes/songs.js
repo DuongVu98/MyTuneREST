@@ -1,286 +1,186 @@
-const express = require("express");
-const assign = require("lodash/assign");
-const crypto = require("crypto");
-const mongoose = require("mongoose");
-const multer = require("multer");
-const GridFsStorage = require("multer-gridfs-storage");
-const Grid = require("gridfs-stream");
-const ObjectId = mongoose.Types.ObjectId;
+const express = require("express")
+const mongoose = require("mongoose")
+const multer = require("multer")
+const Readable = require("stream").Readable
+const fs = require("fs")
+const NodeID3 = require('node-id3')
 
-const SongSchema = require("../models/song");
-const connection = require("../database/connection");
-const router = express.Router();
-module.exports = router;
+const SongSchema = require("../models/song")
+const SongFileSchema = require("../models/songFile")
+const connection = require("../database/connection")
 
-const handlePageError = (res, e) => res.setStatus(500).send(e.message);
-const mongoURI = "mongodb+srv://Tony:1234@myfirstdb-1slkm.gcp.mongodb.net/test?retryWrites=true";
-const Song = SongSchema;
+const songRouter = express.Router()
+const ObjectId = mongoose.Types.ObjectId
+const handlePageError = (res, e) => res.setStatus(500).send(e.message)
 
-let gfs;
+const Song = SongSchema
+const SongFile = SongFileSchema
+
+module.exports = songRouter
+
+let bucket
 connection.once("open", () => {
-    //init stream
-    gfs = Grid(connection.db, mongoose.mongo);
-    gfs.collection("uploads");
-});
-
-//init storage engine
-const storage = new GridFsStorage({
-    url: mongoURI,
-    file: (req, file) => {
-        return new Promise((resolve, reject) => {
-            crypto.randomBytes(16, (err, buf) => {
-                if (err) {
-                    return reject(err);
-                }
-                // const filename = buf.toString("hex") + path.extname(file.originalname);
-                const filename = file.originalname;
-                const fileInfo = {
-                    filename: filename,
-                    bucketName: "uploads"
-                };
-                resolve(fileInfo);
-            });
-        });
-    },
-});
-const upload = multer({ storage });
-
-//@route for index.ejs
-router.get("/index", (req, res) => {
-    gfs.files.find().toArray((err, files) => {
-        if (!files || files.length === 0) {
-            res.render("index", { files: false });
-        } else {
-            files.map(file => {
-                if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
-                    file.isImage = true;
-                    // file.isAudio = false;
-                } else if (file.contentType === "audio/mp3") {
-                    // file.isAudio = true;
-                    file.isImage = false;
-                } else {
-                    file.isImage = false;
-                    // file.isAudio = false;
-                }
-            });
-            res.render("index", { files: files });
-        }
-    });
+    bucket = new mongoose.mongo.GridFSBucket(connection.db, { bucketName: "songs" })
+})
+const storage = multer.memoryStorage()
+const upload = multer({
+    storage: storage,
+    limits: {
+        fields: 1,
+        fileSize: 30000000,
+        files: 1,
+        parts: 2
+    }
 })
 
-// get all songs
+
 //@route GET /
-router.get("/", (req, res) => {
-    let songsList = [];
-    Song.find({}, (err, songs) => {
-        if (!songs || songs.length === 0) {
-            return res.json({
-                err: "no songs exist"
+songRouter.get("/", (req, res) => {
+    // Song.find({}).select("_id -fileUpload").populate("fileUpload").exec((err, songs) => {
+    Song.find({}).populate("fileUpload").exec((err, songs) => {
+        if (err) return res.json({ err: err })
+        return res.status(200).json(songs)
+    })
+})
+
+songRouter.get("/:id", (req, res) => {
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        if (err) {
+            console.log("error populate")
+        } else {
+            return res.status(200).json(song)
+        }
+    })
+})
+//@route GET /:id/audio
+songRouter.get("/audio/:id", (req, res) => {
+
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        console.log(song);
+
+        let fileId
+        try {
+            fileId = new ObjectId(song.fileUpload._id)
+        } catch (err) {
+            return res.json({ err: err })
+        }
+        console.log(fileId)
+        res.setHeader("Content-Type", "audio/mp3")
+        res.setHeader("Accept-Ranges", "bytes")
+        res.setHeader("Content-Length", song.fileUpload.length)
+
+        if (fileId != null) {
+            let downloadStream = bucket.openDownloadStream(fileId)
+            downloadStream.on("data", (chunk) => {
+                res.write(chunk)
+            })
+
+            downloadStream.on("error", () => {
+                res.sendStatus(404)
+            });
+            downloadStream.on("end", () => {
+                console.log("Download successfully with file: " + fileId)
+                res.end()
+            });
+        } else {
+            return res.json({ message: "Something happen with file id" })
+        }
+    })
+})
+
+//@route GET /file-audio/:id
+songRouter.get("/file-audio/:id", (req, res) => {
+    let fileId
+    try {
+        fileId = new ObjectId(req.params.id);
+    } catch (err) {
+        return res.json({ err: err })
+    }
+    console.log(fileId)
+    SongFile.findOne({ _id: fileId }, (err, songFile) => {
+
+        if (err) return handlePageError(res, err)
+
+        res.setHeader("Content-Type", "audio/mp3")
+        res.setHeader("Accept-Ranges", "bytes")
+        res.setHeader("Content-Length", songFile.length)
+
+        if (fileId != null) {
+            let downloadStream = bucket.openDownloadStream(fileId)
+            downloadStream.on("data", (chunk) => {
+                res.write(chunk)
+            })
+
+            downloadStream.on("error", () => {
+                res.sendStatus(404)
+            })
+            downloadStream.on("end", () => {
+                console.log("Download successfully with file: " + fileId)
+                res.end();
             })
         }
-        songs.forEach(song => {
-
-            //getfilefromsong
-            gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
-                //check if files
-                if (!file || file.length === 0) {
-                    return { err: "no song" };
-                }
-                song.getFile = file;
-                songsList.push(song);
-                return res.json(songsList);
-            });
-        });
-    });
-});
-
-//get song by id
-//@route GET /id
-router.get("/:id", (req, res) => {
-    Song.findOne({ _id: req.params.id }, (err, song) => {
-        if (err) return handlePageError(res, err);
-        if (song === null) return res.json({ err: "no song" })
-        gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
-            //check if files
-            if (!file || file.length === 0) {
-                return res.status(404).json({
-                    err: "no files exist"
-                });
-            }
-            song.getFile = file;
-            return res.json(song);
-        });
-
-
-    });
-});
-
-//get file playing from song
-//@route GET /id/audio
-router.get("/:id/audio", (req, res) => {
-    Song.findOne({ _id: req.params.id }, (err, song) => {
-        gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
-
-            if (err) console.log(err)
-
-            //check if files
-            if (!file || file.length === 0) {
-                return res.status(404).json({
-                    err: "no files exist"
-                });
-            }
-            //check if image
-            if (file.contentType === "audio/mp3") {
-                const readstream = gfs.createReadStream(file.filename);
-                readstream.pipe(res);
-            } else {
-                res.status(404).json({
-                    err: "not an audio"
-                });
-            }
-        });
     })
 })
 
-//@route GET /:id/download
-router.get("/:id/download", (req, res) => {
-    Song.findOne({ _id: req.params.id }, (err, song) => {
-        gfs.files.findOne({ _id: song.fileUpload }, (err, file) => {
 
-            if (err) console.log(err)
-
-            //check if files
-            if (!file || file.length === 0) {
-                return res.status(404).json({
-                    err: "no files exist"
-                });
-            }
-            //check if image
-            if (file.contentType === "audio/mp3" || file.contentType === "audio/mpeg") {
-                // let mimetype = mime.lookup(file.filename);
-                res.setHeader('Content-Type', "audio/mpeg");
-                res.setHeader('Content-Disposition', 'attachment; filename="' + file.filename + '"');
-
-                const readstream = gfs.createReadStream(file.filename);
-                readstream.on("error", (err) => {
-                    res.end()
-                })
-
-                readstream.pipe(res);
-            } else {
-                res.status(404).json({
-                    err: "not an audio"
-                });
-            }
-        });
-    })
-})
-
-// upload song
 //@route POST /upload
-router.post("/upload", upload.single("file"), (req, res) => {
-    let fileUpload = req.file.filename;
-    gfs.files.findOne({ filename: fileUpload }, (err, file) => {
-        if (!file || file.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
-        fileId = file._id;
-        console.log(fileId);
-        let data = {
-            id: 1,
-            url: "something",
-            title: "song title",
-            artist: "song artist",
-            img: "some image",
-            isLoved: false,
-            fileUpload: fileId,
-            getFile: null
-        };
-        let newSong = new Song(data);
-        console.log(newSong);
-        newSong.save((err, newSong) => {
-            if (err) console.log("song error: " + err);
-            else console.log("saved - " + newSong);
-        });
-        res.redirect("/api/songs");
-    });
-});
+songRouter.post("/upload", upload.single("file"), (req, res) => {
 
-//delete song and file
-//@route DELETE /id
-router.delete("/id/:id", (req, res) => {
-    Song.findOne({ id: req.song.id }, (err, song) => {
-        if (err) return handlePageError(res, err)
-        else if (song === null) return res.status(404).json({ err: "no song" })
+    // Upload File 
+    let fileName = req.file.originalname
 
-        gfs.remove({ _id: song.fileUpload, root: "uploads" }, (err, GridFsStorage) => {
-            if (err) {
-                return res.status(404).json({ err: err });
-            }
-        });
-        Song.deleteOne(song, (err) => {
-            return handlePageError(res, err)
-        })
-        return res.json({ message: "delete successfully" })
+    //read mp3 meta tag file
+    let tags = NodeID3.read(req.file.buffer)
+
+    const readableStream = new Readable()
+    readableStream.push(req.file.buffer)
+    readableStream.push(null)
+
+    let uploadStream = bucket.openUploadStream(fileName)
+    let fileId = uploadStream.id
+    readableStream.pipe(uploadStream)
+
+    uploadStream.on("error", () => {
+        return res.status(500).json({ message: "Error uploading file" })
+    })
+    uploadStream.on("finish", () => {
+        console.log("Uploading file successfully")
+        res.end()
     })
 
-});
+    // Save new song to collection
+    // should be req.body
+    let newSong = new Song({
+        url: "mytune-service.herokuapp.com/api/songs/file-audio/" + fileId,
+        title: tags.title,
+        artist: tags.artist,
+        album: tags.album,
+        genre: tags.genre,
+        image: null,
+        isLoved: false,
+        fileUpload: fileId,
+    })
+    newSong.save((err, song) => {
+        if (err) console.log("song error: " + err)
+        else console.log("successfully saved song: " + song)
+    })
+})
 
+//@route DELETE /delete/:id
+songRouter.delete("/delete/:id", (req, res) => {
 
-// these are for index.ejs checking
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        if (err) return res.json({ err: "find image error" })
 
-//@route GET /image/:filename
-//display image
-router.get("/image/:filename", (req, res) => {
-    gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
-        //check if files
-        if (!file || file.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
-        //check if image
-        if (file.contentType === "image/jpeg" || file.contentType === "img/png" || file.contentType === "image/png") {
-            const readstream = gfs.createReadStream(file.filename);
-            readstream.pipe(res);
-        } else {
-            res.status(404).json({
-                err: "not an image"
-            });
-        }
-    });
-});
+        console.log("id to delete: " + song.fileUpload)
 
-//@route GET /audio/:filename
-router.get("/audio/:filename", (req, res) => {
-    gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
-        //check if files
-        if (!file || file.length === 0) {
-            return res.status(404).json({
-                err: "no files exist"
-            });
-        }
-        //check if image
-        if (file.contentType === "audio/mp3") {
-            const readstream = gfs.createReadStream(file.filename);
-            readstream.pipe(res);
-        } else {
-            res.status(404).json({
-                err: "not an audio"
-            });
-        }
-    });
-});
+        bucket.delete(song.fileUpload._id, (err) => {
+            if (err) return res.json({ err: "bucket delete error " + err })
 
-//@route DELETE /file:id
-//@desc DELETE file
-router.delete("/files/:id", (req, res) => {
-    gfs.remove({ _id: req.params.id, root: "uploads" }, (err, GridFsStorage) => {
-        if (err) {
-            return res.status(404).json({ err: err });
-        }
-        res.redirect("/api/songs");
-    });
-});
+            Song.deleteOne({ _id: req.params.id }, (err) => {
+                if (err) return json({ message: "model delete error" })
+                return res.json({ message: "delete successfully" })
+            })
+        })
+    })
+})

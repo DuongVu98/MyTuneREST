@@ -4,8 +4,7 @@ const methodOverride = require("method-override")
 const app = express()
 const port = process.env.PORT || 3000
 
-const songs = require("./routes/songs.js")
-const songsbucket = require("./routes/songsbucket")
+const songs = require("./routes/songs")
 const images = require("./routes/images")
 app.listen(port, () => {
     console.log("Application listen on port: " + port)
@@ -21,7 +20,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: true}))
 
 // app.use("/api/songs", songs);
-app.use("/api/songs", songsbucket)
+app.use("/api/songs", songs)
 app.use("/api/images", images)
 
 app.get("/", (req, res) => {
