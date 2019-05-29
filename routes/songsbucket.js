@@ -36,8 +36,9 @@ const upload = multer({
 
 //@route GET /
 songRouter.get("/", (req, res) => {
+    // Song.find({}).select("_id -fileUpload").populate("fileUpload").exec((err, songs) => {
     Song.find({}).populate("fileUpload").exec((err, songs) => {
-        if (err) return res.json({err: err})
+        if (err) return res.json({ err: err })
         return res.status(200).json(songs)
     })
 })
@@ -87,6 +88,7 @@ songRouter.get("/audio/:id", (req, res) => {
     })
 })
 
+//@route GET /file-audio/:id
 songRouter.get("/file-audio/:id", (req, res) => {
     let fileId
     try {
@@ -97,7 +99,7 @@ songRouter.get("/file-audio/:id", (req, res) => {
     console.log(fileId)
     SongFile.findOne({ _id: fileId }, (err, songFile) => {
 
-        if(err) return handlePageError(res, err)
+        if (err) return handlePageError(res, err)
 
         res.setHeader("Content-Type", "audio/mp3")
         res.setHeader("Accept-Ranges", "bytes")
@@ -111,15 +113,17 @@ songRouter.get("/file-audio/:id", (req, res) => {
 
             downloadStream.on("error", () => {
                 res.sendStatus(404)
-            });
+            })
             downloadStream.on("end", () => {
                 console.log("Download successfully with file: " + fileId)
                 res.end();
-            });
+            })
         }
     })
-
 })
+
+
+//@route POST /upload
 songRouter.post("/upload", upload.single("file"), (req, res) => {
 
     // Upload File 
@@ -144,7 +148,6 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
         res.end()
     })
 
-
     // Save new song to collection
     // should be req.body
     let newSong = new Song({
@@ -160,5 +163,24 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
     newSong.save((err, song) => {
         if (err) console.log("song error: " + err)
         else console.log("successfully saved song: " + song)
+    })
+})
+
+//@route DELETE /delete/:id
+songRouter.delete("/delete/:id", (req, res) => {
+
+    Song.findOne({ _id: req.params.id }).populate("fileUpload").exec((err, song) => {
+        if (err) return res.json({ err: "find image error" })
+
+        console.log("id to delete: " + song.fileUpload)
+
+        bucket.delete(song.fileUpload._id, (err) => {
+            if (err) return res.json({ err: "bucket delete error " + err })
+
+            Song.deleteOne({ _id: req.params.id }, (err) => {
+                if (err) return json({ message: "model delete error" })
+                return res.json({ message: "delete successfully" })
+            })
+        })
     })
 })

@@ -71,7 +71,7 @@ imageRouter.get("/file-image/:id", (req, res) => {
 
 //@route POST /upload
 imageRouter.post("/upload", upload.single("file"), (req, res) => {
-    
+
     let fileName = req.file.originalname
     const readableStream = new Readable()
     readableStream.push(req.file.buffer)
@@ -96,7 +96,25 @@ imageRouter.post("/upload", upload.single("file"), (req, res) => {
         imageFileUpload: fileId
     })
     newImage.save((err, image) => {
-        if(err) console.log(err)
+        if (err) console.log(err)
         else console.log("successfully saved image: " + image)
+    })
+})
+
+imageRouter.delete("/delete/:id", (req, res) => {
+
+    Image.findOne({ _id: req.params.id }).populate("imageFileUpload").exec((err, image) => {
+        if (err) return res.json({ err: "find image error" })
+
+        console.log("id to delete: " + image.imageFileUpload)
+
+        bucket.delete(image.imageFileUpload._id, (err) => {
+            if(err) return res.json({err: "bucket delete error "+err})
+
+            Image.deleteOne({_id: req.params.id}, (err) => {
+                if(err) return json({message: "model delete error"})
+                return res.json({ message: "delete successfully" })
+            }) 
+        }) 
     })
 })
