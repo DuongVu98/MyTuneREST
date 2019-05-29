@@ -13,6 +13,7 @@ const SongSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "images.files"
     },
+    imageUrl: String,
     isLoved: Boolean,
     fileUpload: {
         type: Schema.Types.ObjectId,
