@@ -1,6 +1,8 @@
 const express = require("express")
 const bodyParser = require("body-parser")
 const methodOverride = require("method-override")
+const cors = require('cors')
+
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -10,7 +12,7 @@ app.listen(port, () => {
     console.log("Application listen on port: " + port)
 })
 
-
+app.use(cors())
 app.use(methodOverride("_method"))
 app.use(express.static("public"))
 app.set("view engine", "ejs")
