@@ -107,7 +107,7 @@ imageRouter.post("/upload", upload.single("file"), (req, res) => {
     let newImage = new Image({
         imageName: "some image name",
         url: "mytune-service.herokuapp.com/api/images/file-image/" + fileId,
-        classification: "avatar",
+        classification: req.body.classification,
         imageFileUpload: fileId
     })
     newImage.save((err, image) => {
