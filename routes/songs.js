@@ -43,13 +43,14 @@ songRouter.get("/", (req, res) => {
         return res.status(200).json(songs)
     })
 
-    // songDAO.getAllSongs((err, songs) => {
+    // Song.getAllSongs((err, songs) => {
     //     if (err) return res.json({ err: err })
     //     console.log("get successfully")
+    //     // console.log(songs)
     //     return res.status(200).json(songs)
     // })
 
-    // return res.json(songDAO.getAllSongs())
+    // console.log(songDAO.getAllSongs())
 })
 
 songRouter.get("/:id", (req, res) => {

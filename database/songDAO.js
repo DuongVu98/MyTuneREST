@@ -9,16 +9,36 @@ const connection = require("./connection")
 const Song = SongSchema
 // const SongFile = SongFileSchema
 
-module.exports = {
-    getAllSongs : function() {
-        Song.find({}).populate("fileUpload").exec((err, songs) => {
-            if (err) return err
-            return songs
-        })
-    }
+// module.exports = {
+//     getAllSongs : () => {
+//         console.log("get all songs")
+//         Song.find({}).populate("fileUpload").exec((err, songs) => {
+//             if (err) return err
+//             // console.log(songs)
+//             return songs
+//         })
+//     },
+
+//     getSongById : (id) => {
+//         Song.findOne({ _id: id }).populate("fileUpload").exec((err, song) => {
+//             if (err) {
+//                 return err
+//             } else {
+//                 return song
+//             }
+//         })
+//     }
+// }
+
+var songDAO = module.exports = {}
+
+songDAO.getAllSongs = () => {
+    Song.find({}).populate("fileUpload").exec((err, songs) => {
+        if (err) return err
+        console.log(songs.length)
+        return songs
+    })
 }
-
-
 
 const getSongById = (id) => {
     Song.findOne({ _id: id }).populate("fileUpload").exec((err, song) => {
