@@ -8,6 +8,7 @@ const NodeID3 = require('node-id3')
 const SongSchema = require("../models/song")
 const SongFileSchema = require("../models/songFile")
 const connection = require("../database/connection")
+const songDAO = require("../database/songDAO")
 
 const songRouter = express.Router()
 const ObjectId = mongoose.Types.ObjectId
@@ -41,6 +42,14 @@ songRouter.get("/", (req, res) => {
         if (err) return res.json({ err: err })
         return res.status(200).json(songs)
     })
+
+    // songDAO.getAllSongs((err, songs) => {
+    //     if (err) return res.json({ err: err })
+    //     console.log("get successfully")
+    //     return res.status(200).json(songs)
+    // })
+
+    // return res.json(songDAO.getAllSongs())
 })
 
 songRouter.get("/:id", (req, res) => {
