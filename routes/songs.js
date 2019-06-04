@@ -167,7 +167,7 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
         album: (req.body.album == null)? tags.album : req.body.album,
         genre: (req.body.genre == null)? tags.genre : req.body.genre,
         image: null,
-        imageUrl: "mytune-service.herokuapp.com/api/images/default-image",
+        imageUrl: "",
         isLoved: false,
         fileUpload: fileId,
     })
