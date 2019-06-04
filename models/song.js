@@ -23,4 +23,12 @@ const SongSchema = new Schema({
 
 SongSchema.plugin(mongoosePaginate)
 
+SongSchema.statics.getAllSongs = () => {
+    this.model.find({}).populate("fileUpload").exec((err, songs) => {
+        if (err) return err
+        console.log(songs.length)
+        return songs
+    })
+}
+
 module.exports = mongoose.model("songs", SongSchema)

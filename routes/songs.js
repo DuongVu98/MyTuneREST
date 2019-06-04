@@ -8,6 +8,7 @@ const NodeID3 = require('node-id3')
 const SongSchema = require("../models/song")
 const SongFileSchema = require("../models/songFile")
 const connection = require("../database/connection")
+const songDAO = require("../database/songDAO")
 
 const songRouter = express.Router()
 const ObjectId = mongoose.Types.ObjectId
@@ -41,6 +42,15 @@ songRouter.get("/", (req, res) => {
         if (err) return res.json({ err: err })
         return res.status(200).json(songs)
     })
+
+    // Song.getAllSongs((err, songs) => {
+    //     if (err) return res.json({ err: err })
+    //     console.log("get successfully")
+    //     // console.log(songs)
+    //     return res.status(200).json(songs)
+    // })
+
+    // console.log(songDAO.getAllSongs())
 })
 
 songRouter.get("/:id", (req, res) => {
@@ -157,7 +167,7 @@ songRouter.post("/upload", upload.single("file"), (req, res) => {
         album: (req.body.album == null)? tags.album : req.body.album,
         genre: (req.body.genre == null)? tags.genre : req.body.genre,
         image: null,
-        imageUrl: "mytune-service.herokuapp.com/api/images/default-image",
+        imageUrl: "",
         isLoved: false,
         fileUpload: fileId,
     })
