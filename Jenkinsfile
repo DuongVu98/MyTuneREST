@@ -10,7 +10,7 @@ pipeline {
         }
         stage ("Example"){
             steps {
-                sh 'yarn list'
+                sh 'yarn list --depth=0'
             }
         }
     }
