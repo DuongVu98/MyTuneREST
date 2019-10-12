@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage ("Example"){
             steps {
-                sh 'npm ls'
+                sh 'yarn list'
             }
         }
     }
