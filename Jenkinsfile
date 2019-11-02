@@ -15,5 +15,10 @@ pipeline {
                 sh 'yarn list --depth=0'
             }
         }
+        stage ("Run"){
+            steps {
+                sh 'yarn start'
+            }
+        }
     }
 }
