@@ -17,7 +17,7 @@ pipeline {
         }
         stage ("Build container"){
             steps {
-                sh 'docker build -t tony16019/mytune-service'
+                sh 'docker build -t tony16019/mytune-service .'
             }
         }
     }
