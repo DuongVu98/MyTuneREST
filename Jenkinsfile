@@ -15,9 +15,9 @@ pipeline {
                 sh 'yarn list --depth=0'
             }
         }
-        stage ("Run"){
+        stage ("Build container"){
             steps {
-                sh 'yarn start'
+                sh 'docker build -t tony16019/mytune-service'
             }
         }
     }
